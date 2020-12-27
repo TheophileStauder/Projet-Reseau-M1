@@ -12,11 +12,12 @@
 #include <netinet/in.h>     
 #include <netdb.h>     
 #include <memory.h>     
-#include <errno.h>      
+#include <errno.h>     
+#include <arpa/inet.h> 
 
 
-///TEST adresse///
-struct in_addr test;
+
+struct sockaddr_in adresse;
 
 int creersock( u_short port) {
 
@@ -24,9 +25,7 @@ int creersock( u_short port) {
   int sock, retour;
 
   // n (la structure est d?crite dans sys/socket.h)
-  struct sockaddr_in adresse;
-  test = adresse.sin_addr; ///  TEST adresse
-
+  
 
   sock = socket(AF_INET,SOCK_STREAM,0);
 
@@ -87,7 +86,7 @@ int main (int argc, char *argv[]) {
       newsockfd = accept (sock, (struct sockaddr *) 0, (unsigned int*) 0);
 
       if ( fork() == 0 ) {
-            //close ( sock ) ;
+            close(sock);
             if (newsockfd == -1) {
                 perror("Erreur accept");
                 return(-1);
@@ -107,21 +106,19 @@ int main (int argc, char *argv[]) {
                 msg[s] = 0;
                 printf("Message: %s", msg);
               
-                //close(newsockfd);
-
-
-                ///TEST adresse///
+                
                 char str[INET_ADDRSTRLEN];
-                inet_ntop( AF_INET, &test, str, INET_ADDRSTRLEN );
-                //printf("ADRESSE : %s\n", str);
+                //inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
+                //printf("IP address is: %s\n",str);
+                //printf("IP address is: %s\n", inet_ntoa(adresse.sin_addr));
 
                 FILE *fp;
                 fp = fopen("./test.txt", "a+");
                 fprintf(fp, "Message : %s",msg);
                 fclose(fp);
-                
+                close(newsockfd);
             }         
-                
+            exit(1);   
       }    
       
   } 
