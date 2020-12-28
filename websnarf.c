@@ -21,6 +21,7 @@ struct sockaddr_in adresse;
 
 int creersock( u_short port) {
 
+
   
   int sock, retour;
 
@@ -59,12 +60,17 @@ int creersock( u_short port) {
 }
 
 
+
 int main (int argc, char *argv[]) {
 
-  int newsockfd, s, sock;
+  int newsockfd, s, sock, clientlenght;
   u_short port;
   char msg [BUFSIZ];
   int timeout = 5;
+  struct sockaddr_in cli_addr;
+  clientlenght = sizeof(cli_addr);
+
+  
   
   if (argv[1] == NULL ){
       printf("Erreur : PORT incorrect ");
@@ -77,13 +83,10 @@ int main (int argc, char *argv[]) {
 
   listen (sock,5);
   printf("Websnarf C version listening on port %d (timeout=%d secs)\n", port,timeout);
-
-  
   
   for ( ; ; )  {
      
-      
-      newsockfd = accept (sock, (struct sockaddr *) 0, (unsigned int*) 0);
+      newsockfd = accept (sock, (struct sockaddr *)&cli_addr, &clientlenght);
 
       if ( fork() == 0 ) {
             close(sock);
@@ -104,22 +107,30 @@ int main (int argc, char *argv[]) {
             }
             else{
                 msg[s] = 0;
-                printf("Message: %s", msg);
               
-                
-                char str[INET_ADDRSTRLEN];
-                //inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
-                //printf("IP address is: %s\n",str);
-                //printf("IP address is: %s\n", inet_ntoa(adresse.sin_addr));
+                /*Recuperation de l'adresse IP du client*/
+                struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&cli_addr;
+                struct in_addr ipAddr = pV4Addr->sin_addr;
+                char ipClient[INET_ADDRSTRLEN];
+                inet_ntop( AF_INET, &ipAddr, ipClient, INET_ADDRSTRLEN );
+
+
+                /*Recuperation de l'adresse IP du server*/
+                struct sockaddr_in* pV4AddrServ = (struct sockaddr_in*)&adresse;
+                struct in_addr ipAddrServ = pV4AddrServ->sin_addr;
+                char ipServ[INET_ADDRSTRLEN];
+                inet_ntop( AF_INET, &ipAddrServ, ipServ, INET_ADDRSTRLEN );
 
                 FILE *fp;
                 fp = fopen("./test.txt", "a+");
-                fprintf(fp, "Message : %s",msg);
+                printf("%s -> %s : %s",ipClient,ipServ,msg);
+                fprintf(fp, "%s -> %s : %s",ipClient,ipServ,msg);
                 fclose(fp);
                 close(newsockfd);
             }         
             exit(1);   
-      }    
+      } 
+      close(newsockfd);   
       
   } 
 
