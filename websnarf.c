@@ -68,13 +68,14 @@ int main (int argc, char *argv[]) {
 
   int newsockfd, s, sock, clientlenght;
   int annee,mois,jour,heure,min,sec;
-  u_short port;
-  char msg [BUFSIZ];
   int timeout = 5;
+  u_short port;
   struct sockaddr_in cli_addr;
-  clientlenght = sizeof(cli_addr);
 
-  
+  char msg [BUFSIZ];
+  char ipClient[INET_ADDRSTRLEN];
+  char ipServ[INET_ADDRSTRLEN];
+  clientlenght = sizeof(cli_addr);
   
   if (argv[1] == NULL ){
       printf("Erreur : PORT incorrect ");
@@ -91,59 +92,62 @@ int main (int argc, char *argv[]) {
   for ( ; ; )  {
      
       newsockfd = accept (sock, (struct sockaddr *)&cli_addr, &clientlenght);
+      time_t start = time (NULL);
 
       if ( fork() == 0 ) {
-            close(sock);
-            if (newsockfd == -1) {
-                perror("Erreur accept");
-                return(-1);
-            }
-            else{
-                //printf("Accept reussi");
-            }
-            
-            s = read(newsockfd, msg, 1024);
-            
 
-            if (s == -1){
-                perror("Problemes");
-                exit (1) ; 
-            }
-            else{
-                msg[s] = 0;
+          close(sock);
+          if (newsockfd == -1) {
+              perror("Erreur accept");
+              return(-1);
+          }
+          else{
+              //printf("Accept reussi");
+          }
+          
+          while((int) (time (NULL) - start) < timeout){
+              s = read(newsockfd, msg, 1024);
               
-                /*Recuperation de l'adresse IP du client*/
-                struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&cli_addr;
-                struct in_addr ipAddr = pV4Addr->sin_addr;
-                char ipClient[INET_ADDRSTRLEN];
-                inet_ntop( AF_INET, &ipAddr, ipClient, INET_ADDRSTRLEN );
+
+              if (s == -1){
+                  perror("Problemes");
+                  exit (1) ; 
+              }
+              else{
+                  msg[s] = 0;
+                
+                  /*Recuperation de l'adresse IP du client*/
+                  struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&cli_addr;
+                  struct in_addr ipAddr = pV4Addr->sin_addr;
+                  inet_ntop( AF_INET, &ipAddr, ipClient, INET_ADDRSTRLEN );
+
+                  /*Recuperation de l'adresse IP du server*/
+                  struct sockaddr_in* pV4AddrServ = (struct sockaddr_in*)&adresse;
+                  struct in_addr ipAddrServ = pV4AddrServ->sin_addr;
+                  inet_ntop( AF_INET, &ipAddrServ, ipServ, INET_ADDRSTRLEN );
 
 
-                /*Recuperation de l'adresse IP du server*/
-                struct sockaddr_in* pV4AddrServ = (struct sockaddr_in*)&adresse;
-                struct in_addr ipAddrServ = pV4AddrServ->sin_addr;
-                char ipServ[INET_ADDRSTRLEN];
-                inet_ntop( AF_INET, &ipAddrServ, ipServ, INET_ADDRSTRLEN );
+                  /*Recuperation de la date et l'heure*/
+                  time_t t = time(NULL);
+                  struct tm tm = *localtime(&t);
+                  annee = tm.tm_year + 1900;
+                  mois = tm.tm_mon + 1;
+                  jour = tm.tm_mday;
+                  heure = tm.tm_hour;
+                  min = tm.tm_min;
+                  sec = tm.tm_sec;
 
-
-                /*Recuperation de la date et l'heure*/
-                time_t t = time(NULL);
-                struct tm tm = *localtime(&t);
-                annee = tm.tm_year + 1900;
-                mois = tm.tm_mon + 1;
-                jour = tm.tm_mday;
-                heure = tm.tm_hour;
-                min = tm.tm_min;
-                sec = tm.tm_sec;
-
-                FILE *fp;
-                fp = fopen("./test.txt", "a+");
-                printf("%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
-                fprintf(fp, "%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
-                fclose(fp);
-                close(newsockfd);
-            }         
-            exit(1);   
+                  FILE *fp;
+                  fp = fopen("./test.txt", "a+");
+                  printf("%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
+                  fprintf(fp, "%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
+                  fclose(fp);
+                  
+              }
+          }
+          close(newsockfd);
+          printf("\ntimeout reached for %s\n",ipClient);        
+          exit(1);   
       } 
       close(newsockfd);   
       
