@@ -1,10 +1,17 @@
 /**
- * serveur.c
+ * Projet Réseau M1
+ *
+ *Websnarf C version
+ *Author : Stauder Theophile and Laconi Maela
+ *
+ *
+ *For more information : http://www.unixwiz.net/tools/websnarf.html
  */
 
 
 #include <stdio.h>      
-#include <stdlib.h>     
+#include <stdlib.h>
+#include <time.h>     
 #include <string.h>     
 #include <unistd.h>     
 #include <sys/types.h>      
@@ -25,9 +32,6 @@ int creersock( u_short port) {
   
   int sock, retour;
 
-  // n (la structure est d?crite dans sys/socket.h)
-  
-
   sock = socket(AF_INET,SOCK_STREAM,0);
 
   if (sock<0) {
@@ -43,7 +47,6 @@ int creersock( u_short port) {
   
   
   int optval; 
-  //int optlen;
   optval = 1;
   setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
   
@@ -64,6 +67,7 @@ int creersock( u_short port) {
 int main (int argc, char *argv[]) {
 
   int newsockfd, s, sock, clientlenght;
+  int annee,mois,jour,heure,min,sec;
   u_short port;
   char msg [BUFSIZ];
   int timeout = 5;
@@ -121,10 +125,21 @@ int main (int argc, char *argv[]) {
                 char ipServ[INET_ADDRSTRLEN];
                 inet_ntop( AF_INET, &ipAddrServ, ipServ, INET_ADDRSTRLEN );
 
+
+                /*Recuperation de la date et l'heure*/
+                time_t t = time(NULL);
+                struct tm tm = *localtime(&t);
+                annee = tm.tm_year + 1900;
+                mois = tm.tm_mon + 1;
+                jour = tm.tm_mday;
+                heure = tm.tm_hour;
+                min = tm.tm_min;
+                sec = tm.tm_sec;
+
                 FILE *fp;
                 fp = fopen("./test.txt", "a+");
-                printf("%s -> %s : %s",ipClient,ipServ,msg);
-                fprintf(fp, "%s -> %s : %s",ipClient,ipServ,msg);
+                printf("%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
+                fprintf(fp, "%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
                 fclose(fp);
                 close(newsockfd);
             }         
