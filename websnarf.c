@@ -16,11 +16,12 @@
 #include <unistd.h>     
 #include <sys/types.h>      
 #include <sys/socket.h>     
-#include <netinet/in.h>     
+#include <netinet/in.h>       
 #include <netdb.h>     
 #include <memory.h>     
 #include <errno.h>     
 #include <arpa/inet.h> 
+#include <fcntl.h>
 
 
 
@@ -92,6 +93,10 @@ int main (int argc, char *argv[]) {
   for ( ; ; )  {
      
       newsockfd = accept (sock, (struct sockaddr *)&cli_addr, &clientlenght);
+      
+
+      /* Change the socket into non-blocking state  + start of the timeout time */
+      fcntl(newsockfd, F_SETFL, O_NONBLOCK); 
       time_t start = time (NULL);
 
       if ( fork() == 0 ) {
@@ -102,7 +107,7 @@ int main (int argc, char *argv[]) {
               return(-1);
           }
           else{
-              //printf("Accept reussi");
+            //printf("Accept reussi");    
           }
           
           while((int) (time (NULL) - start) < timeout){
@@ -110,8 +115,7 @@ int main (int argc, char *argv[]) {
               
 
               if (s == -1){
-                  perror("Problemes");
-                  exit (1) ; 
+                  //Do nothing  (any message received)
               }
               else{
                   msg[s] = 0;
