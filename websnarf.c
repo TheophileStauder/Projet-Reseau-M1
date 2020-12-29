@@ -70,6 +70,7 @@ int main (int argc, char *argv[]) {
   int newsockfd, s, sock, clientlenght;
   int annee,mois,jour,heure,min,sec;
   int timeout = 5;
+  int option;
   u_short port;
   struct sockaddr_in cli_addr;
 
@@ -77,6 +78,27 @@ int main (int argc, char *argv[]) {
   char ipClient[INET_ADDRSTRLEN];
   char ipServ[INET_ADDRSTRLEN];
   clientlenght = sizeof(cli_addr);
+
+  while((option = getopt(argc, argv, ":f:t:")) != -1){ //get option from the getopt() method
+      switch(option){
+         //For option i, r, l, print that these are options
+         case 'f':
+            printf("Given Option: %c\n", option);
+            printf("Given File: %s\n", optarg);
+            break;
+         case 't': //here f is used for some file name
+            printf("Given Option: %c\n", option);
+            printf("Given timeout: %s\n",optarg);
+            break;
+         case ':':
+            printf("option needs a value\n");
+            exit(1);
+            break;
+         case '?': //used for some unknown options
+            printf("unknown option: %c\n", optopt);
+            break;
+      }
+   }
   
   if (argv[1] == NULL ){
       printf("Erreur : PORT incorrect ");
