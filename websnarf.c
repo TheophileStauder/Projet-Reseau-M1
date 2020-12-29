@@ -23,7 +23,7 @@
 #include <arpa/inet.h> 
 #include <fcntl.h>
 
-
+#define DEFAULT_PORT 80
 
 struct sockaddr_in adresse;
 
@@ -63,7 +63,14 @@ int creersock( u_short port) {
   return (sock);
 }
 
-
+void print_man(){
+  printf("--------------HELP--------------\n\n");
+  printf("Avaible options are :\n");
+  printf("[-p]                To specify the port number , default is 80 and you have to run with sudo this programm to allow to use private port \n\n");
+  printf("\n[-f] filename.txt   To specify the filename where logs will be save\n\n, default filename is logs.txt");
+  printf("\n[-t] timeout      To specify the timeout, how long a connection with a client will take before the server end it\n\n");
+  printf("\n[-h]              To access to the help manual ( where you are now ) \n\n");
+}
 
 int main (int argc, char *argv[]) {
 
@@ -71,51 +78,60 @@ int main (int argc, char *argv[]) {
   int annee,mois,jour,heure,min,sec;
   int timeout = 5;
   int option;
-  u_short port;
+  u_short port = DEFAULT_PORT;
   struct sockaddr_in cli_addr;
 
   char msg [BUFSIZ];
   char ipClient[INET_ADDRSTRLEN];
   char ipServ[INET_ADDRSTRLEN];
+  char filename[100] = "logs.txt";;
   clientlenght = sizeof(cli_addr);
 
-  while((option = getopt(argc, argv, ":f:t:")) != -1){ //get option from the getopt() method
+  while((option = getopt(argc, argv, ":hf:t:hp:")) != -1){ //get option from the getopt() method
       switch(option){
-         //For option i, r, l, print that these are options
-         case 'f':
-            printf("Given Option: %c\n", option);
-            printf("Given File: %s\n", optarg);
+         case 'h':
+            printf("Given Option: %c\n", option); //DEBUG
+            print_man();
+            exit(1);
             break;
-         case 't': //here f is used for some file name
-            printf("Given Option: %c\n", option);
-            printf("Given timeout: %s\n",optarg);
+
+          case 'p':
+            printf("Given Option: %c\n", option); //DEBUG
+            port = atoi(optarg);
+            break;
+         case 'f':
+            printf("Given Option: %c\n", option); //DEBUG
+            printf("Given File: %s\n", optarg);   //DEBUG
+            strcpy(filename, optarg);
+            printf("FILE NAME IS %s\n", filename);
+            break;
+         case 't': 
+            printf("Given Option: %c\n", option); //DEBUG
+            printf("Given timeout: %s\n",optarg); //DEBUG
+            timeout = atoi(optarg);
+            if(!timeout){perror("Timeout invalid , prompt a integer");return 0;}
             break;
          case ':':
-            printf("option needs a value\n");
+            printf("option needs a value\n");  //DEBUG
             exit(1);
             break;
          case '?': //used for some unknown options
             printf("unknown option: %c\n", optopt);
+            printf("run -h for reading help manual: %c\n", optopt);
+            exit(1);
             break;
       }
    }
   
-  if (argv[1] == NULL ){
-      printf("Erreur : PORT incorrect ");
-      exit(0);
-  }
-  
-  port=(u_short) atoi(argv[1]);
 
   sock=creersock (port);
 
   listen (sock,5);
-  printf("Websnarf C version listening on port %d (timeout=%d secs)\n", port,timeout);
+  printf("Websnarf C version listening on port %d (timeout=%d secs)\n", port ,timeout);
   
   for ( ; ; )  {
-     
+
       newsockfd = accept (sock, (struct sockaddr *)&cli_addr, &clientlenght);
-      
 
       /* Change the socket into non-blocking state  + start of the timeout time */
       fcntl(newsockfd, F_SETFL, O_NONBLOCK); 
@@ -164,7 +180,7 @@ int main (int argc, char *argv[]) {
                   sec = tm.tm_sec;
 
                   FILE *fp;
-                  fp = fopen("./test.txt", "a+");
+                  fp = fopen(filename, "a+");
                   printf("%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
                   fprintf(fp, "%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
                   fclose(fp);
