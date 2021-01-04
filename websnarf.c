@@ -66,10 +66,12 @@ int creersock( u_short port) {
 void print_man(){
   printf("--------------HELP--------------\n\n");
   printf("Avaible options are :\n");
-  printf("[-p]                To specify the port number , default is 80 and you have to run with sudo this programm to allow to use private port \n\n");
-  printf("\n[-f] filename.txt   To specify the filename where logs will be save\n\n, default filename is logs.txt");
-  printf("\n[-t] timeout      To specify the timeout, how long a connection with a client will take before the server end it\n\n");
-  printf("\n[-h]              To access to the help manual ( where you are now ) \n\n");
+  printf("[-p]                  To specify the port number , default is 80 and you have to run with sudo this programm to allow to use private port \n\n");
+  printf("\n[-f] filename.txt     To specify the filename where logs will be save, default filename is logs.txt\n\n,");
+  printf("\n[-t] timeout          To specify the timeout, how long a connection with a client will take before the server end it\n\n");
+  printf("\n[-m] maxSizeMessage   To specify the max number of character the request which will be log\n\n");
+  printf("\n[-h]                  To access to the help manual ( where you are now ) \n\n");
+
 }
 
 int main (int argc, char *argv[]) {
@@ -77,6 +79,7 @@ int main (int argc, char *argv[]) {
   int newsockfd, s, sock, clientlenght;
   int annee,mois,jour,heure,min,sec;
   int timeout = 5;
+  int maxeSize = 10;
   int option;
   u_short port = DEFAULT_PORT;
   struct sockaddr_in cli_addr;
@@ -87,37 +90,42 @@ int main (int argc, char *argv[]) {
   char filename[100] = "logs.txt";;
   clientlenght = sizeof(cli_addr);
 
-  while((option = getopt(argc, argv, ":hf:t:hp:")) != -1){ //get option from the getopt() method
+  while((option = getopt(argc, argv, ":hf:t:hp:m:")) != -1){ //get option from the getopt() method
       switch(option){
          case 'h':
-            printf("Given Option: %c\n", option); //DEBUG
+            //printf("Given Option: %c\n", option); //DEBUG
             print_man();
             exit(1);
             break;
-
           case 'p':
-            printf("Given Option: %c\n", option); //DEBUG
+            //printf("Given Option: %c\n", option); //DEBUG
             port = atoi(optarg);
             break;
          case 'f':
-            printf("Given Option: %c\n", option); //DEBUG
-            printf("Given File: %s\n", optarg);   //DEBUG
+            //printf("Given Option: %c\n", option); //DEBUG
+            //printf("Given File: %s\n", optarg);   //DEBUG
             strcpy(filename, optarg);
-            printf("FILE NAME IS %s\n", filename);
+            printf("LOG FILE IS %s\n", filename);
             break;
          case 't': 
-            printf("Given Option: %c\n", option); //DEBUG
-            printf("Given timeout: %s\n",optarg); //DEBUG
+            //printf("Given Option: %c\n", option); //DEBUG
+            //printf("Given timeout: %s\n",optarg); //DEBUG
             timeout = atoi(optarg);
             if(!timeout){perror("Timeout invalid , prompt a integer");return 0;}
+            break;
+          case 'm': 
+            //printf("Given Option: %c\n", option); //DEBUG
+            //printf("Given MessageSize: %s\n",optarg); //DEBUG
+            maxeSize = atoi(optarg);
+            if(maxeSize<0){maxeSize = 5;}
             break;
          case ':':
             printf("option needs a value\n");  //DEBUG
             exit(1);
             break;
          case '?': //used for some unknown options
-            printf("unknown option: %c\n", optopt);
-            printf("run -h for reading help manual: %c\n", optopt);
+            printf("UNKNOW OPTION: %c\n", optopt);
+            printf("run './websnarf -h ' for reading help manual:\n");
             exit(1);
             break;
       }
@@ -151,13 +159,20 @@ int main (int argc, char *argv[]) {
           while((int) (time (NULL) - start) < timeout){
               s = read(newsockfd, msg, 1024);
               
+            
 
               if (s == -1){
                   //Do nothing  (any message received)
               }
               else{
                   msg[s] = 0;
-                
+                  
+                  //On réduit la taille du message reçu à maxSize
+                  char target[maxeSize];
+                  strncpy(target, msg, 10);
+                  target[maxeSize] = '\0'; // IMPORTANT!
+
+
                   /*Recuperation de l'adresse IP du client*/
                   struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&cli_addr;
                   struct in_addr ipAddr = pV4Addr->sin_addr;
@@ -181,8 +196,13 @@ int main (int argc, char *argv[]) {
 
                   FILE *fp;
                   fp = fopen(filename, "a+");
-                  printf("%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
-                  fprintf(fp, "%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,msg);
+                  if(! target[0] == '\0'){
+                    
+                    fprintf(fp, "\n%d/%d/%d %d:%d:%d  %s -> %s : %s ",jour,mois,annee,heure,min,sec,ipClient,ipServ,target);
+                    
+                    printf("%d/%d/%d %d:%d:%d  %s -> %s : %s ",jour,mois,annee,heure,min,sec,ipClient,ipServ,target);
+                    
+                  }
                   fclose(fp);
                   
               }
