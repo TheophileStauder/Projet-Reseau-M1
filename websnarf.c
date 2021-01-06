@@ -15,13 +15,16 @@
 #include <string.h>     
 #include <unistd.h>     
 #include <sys/types.h>      
-#include <sys/socket.h>     
+#include <sys/socket.h> 
+#include <sys/stat.h>    
 #include <netinet/in.h>       
 #include <netdb.h>     
 #include <memory.h>     
 #include <errno.h>     
 #include <arpa/inet.h> 
 #include <fcntl.h>
+
+
 
 #define DEFAULT_PORT 80
 
@@ -79,8 +82,9 @@ int main (int argc, char *argv[]) {
   int newsockfd, s, sock, clientlenght;
   int annee,mois,jour,heure,min,sec;
   int timeout = 5;
-  int maxeSize = 10;
+  int maxSize = 10;
   int option;
+  int saveDirectoryBool = 0;
   u_short port = DEFAULT_PORT;
   struct sockaddr_in cli_addr;
 
@@ -88,9 +92,10 @@ int main (int argc, char *argv[]) {
   char ipClient[INET_ADDRSTRLEN];
   char ipServ[INET_ADDRSTRLEN];
   char filename[100] = "logs.txt";;
+  char directorySave[100] = "default";
   clientlenght = sizeof(cli_addr);
 
-  while((option = getopt(argc, argv, ":hf:t:hp:m:")) != -1){ //get option from the getopt() method
+  while((option = getopt(argc, argv, ":hf:t:hp:m:d:")) != -1){ //get option from the getopt() method
       switch(option){
          case 'h':
             //printf("Given Option: %c\n", option); //DEBUG
@@ -116,8 +121,16 @@ int main (int argc, char *argv[]) {
           case 'm': 
             //printf("Given Option: %c\n", option); //DEBUG
             //printf("Given MessageSize: %s\n",optarg); //DEBUG
-            maxeSize = atoi(optarg);
-            if(maxeSize<0){maxeSize = 5;}
+            maxSize = atoi(optarg);
+            if(maxSize<0){maxSize = 10;}
+            break;
+          case 'd': 
+            //printf("Given Option: %c\n", option); //DEBUG
+            //printf("Given MessageSize: %s\n",optarg); //DEBUG
+            strcpy(directorySave, optarg);
+            printf("DIRECTORY is %s\n", directorySave);
+            int result = mkdir(directorySave, 0777);
+            saveDirectoryBool = 1;
             break;
          case ':':
             printf("option needs a value\n");  //DEBUG
@@ -149,8 +162,9 @@ int main (int argc, char *argv[]) {
 
           close(sock);
           if (newsockfd == -1) {
-              perror("Erreur accept");
-              return(-1);
+              //perror("Erreur accept");
+              perror("Permission denied : [port 80]");
+              exit(0);
           }
           else{
             //printf("Accept reussi");    
@@ -168,9 +182,9 @@ int main (int argc, char *argv[]) {
                   msg[s] = 0;
                   
                   //On réduit la taille du message reçu à maxSize
-                  char target[maxeSize];
-                  strncpy(target, msg, 10);
-                  target[maxeSize] = '\0'; // IMPORTANT!
+                  char target[maxSize];
+                  strncpy(target, msg, maxSize);
+                  target[maxSize] = '\0'; // IMPORTANT!
 
 
                   /*Recuperation de l'adresse IP du client*/
@@ -194,27 +208,46 @@ int main (int argc, char *argv[]) {
                   min = tm.tm_min;
                   sec = tm.tm_sec;
 
-                  FILE *fp;
-                  fp = fopen(filename, "a+");
-                  if(! target[0] == '\0'){
-                    
-                    fprintf(fp, "\n%d/%d/%d %d:%d:%d  %s -> %s : %s ",jour,mois,annee,heure,min,sec,ipClient,ipServ,target);
-                    
-                    printf("%d/%d/%d %d:%d:%d  %s -> %s : %s ",jour,mois,annee,heure,min,sec,ipClient,ipServ,target);
-                    
+
+                  char path[100];
+                  if(saveDirectoryBool){
+                      //COncaténation du nom de fichier sous forme IPclient->IPserveur
+                      strcat(path,directorySave);
+                      strcat(path,"/");
+                      strcat(path,ipClient);
+                      strcat(path, " -> ");
+                      strcat(path, ipServ);
+
+                      //printf("path is : %s\n",path ); //DEBUG
+                      FILE *fp;
+                      fp = fopen(path, "a+");
+                      if(!target[0] == '\0'){
+                          fprintf(fp, "\n%d/%d/%d %d:%d:%d : %s",jour,mois,annee,heure,min,sec,target);
+                          printf("\n%d/%d/%d %d:%d:%d : %s",jour,mois,annee,heure,min,sec,target); //DEBUG
+                          //printf("DANS SAVE DIR\n");
+                      }
+                      fclose(fp);
+                  }else{
+                      FILE *fp;
+                      fp = fopen(filename, "a+");
+                      if(! target[0] == '\0'){
+                        
+                          fprintf(fp, "\n%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,target);
+                          printf("\n%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,target); //DEBUG
+                          //printf("SAVE LOG\n");
+                      }
+                      fclose(fp);
                   }
-                  fclose(fp);
+                  
                   
               }
           }
           close(newsockfd);
-          printf("\ntimeout reached for %s\n",ipClient);        
+          printf("\ntimeout reached for %s",ipClient);        
           exit(1);   
       } 
       close(newsockfd);   
-      
-  } 
-
+  }
   close(sock);   
   return 0;
 }
