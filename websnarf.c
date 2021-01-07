@@ -82,9 +82,11 @@ int main (int argc, char *argv[]) {
   int newsockfd, s, sock, clientlenght;
   int annee,mois,jour,heure,min,sec;
   int timeout = 5;
-  int maxSize = 10;
+  int maxSize = 20;
   int option;
   int saveDirectoryBool = 0;
+  int paquetCapture = 0;
+  int issFormat = 0;
   u_short port = DEFAULT_PORT;
   struct sockaddr_in cli_addr;
 
@@ -95,7 +97,7 @@ int main (int argc, char *argv[]) {
   char directorySave[100] = "default";
   clientlenght = sizeof(cli_addr);
 
-  while((option = getopt(argc, argv, ":hf:t:hp:m:d:")) != -1){ //get option from the getopt() method
+  while((option = getopt(argc, argv, ":hf:t:hp:m:cid:")) != -1){ //get option from the getopt() method
       switch(option){
          case 'h':
             //printf("Given Option: %c\n", option); //DEBUG
@@ -132,6 +134,14 @@ int main (int argc, char *argv[]) {
             int result = mkdir(directorySave, 0777);
             saveDirectoryBool = 1;
             break;
+          case 'c': 
+            //printf("Given Option: %c\n", option); //DEBUG
+            paquetCapture = 1;
+            break;
+          case 'i': 
+            //printf("Given Option: %c\n", option); //DEBUG
+            issFormat = 1;
+            break;
          case ':':
             printf("option needs a value\n");  //DEBUG
             exit(1);
@@ -146,8 +156,8 @@ int main (int argc, char *argv[]) {
   
 
   sock=creersock (port);
-
-  listen (sock,5);
+  if(paquetCapture){maxSize = 350;}
+  listen (sock,10);
   printf("Websnarf C version listening on port %d (timeout=%d secs)\n", port ,timeout);
   
   for ( ; ; )  {
@@ -180,6 +190,7 @@ int main (int argc, char *argv[]) {
               }
               else{
                   msg[s] = 0;
+                  //printf("MESSAGE %s\n", msg ); //DEBUG
                   
                   //On réduit la taille du message reçu à maxSize
                   char target[maxSize];
@@ -222,7 +233,12 @@ int main (int argc, char *argv[]) {
                       FILE *fp;
                       fp = fopen(path, "a+");
                       if(!target[0] == '\0'){
-                          fprintf(fp, "\n%d/%d/%d %d:%d:%d : %s",jour,mois,annee,heure,min,sec,target);
+                          if(issFormat){
+                              fprintf(fp, "\n%s , - , %d/%d/%d , %d:%d:%d ,%s , %s",ipClient,jour,mois,annee,heure,min,sec,ipServ,target);
+                          }else{
+                              fprintf(fp, "\n%d/%d/%d %d:%d:%d : %s",jour,mois,annee,heure,min,sec,target);
+                          }
+                          
                           printf("\n%d/%d/%d %d:%d:%d : %s",jour,mois,annee,heure,min,sec,target); //DEBUG
                           //printf("DANS SAVE DIR\n");
                       }
@@ -231,8 +247,11 @@ int main (int argc, char *argv[]) {
                       FILE *fp;
                       fp = fopen(filename, "a+");
                       if(! target[0] == '\0'){
-                        
-                          fprintf(fp, "\n%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,target);
+                        if(issFormat){
+                              fprintf(fp, "\n%s , - , %d/%d/%d , %d:%d:%d ,%s , %s",ipClient,jour,mois,annee,heure,min,sec,ipServ,target);
+                        }else{
+                              fprintf(fp, "\n%d/%d/%d %d:%d:%d : %s",jour,mois,annee,heure,min,sec,target);
+                        }
                           printf("\n%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,target); //DEBUG
                           //printf("SAVE LOG\n");
                       }
