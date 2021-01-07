@@ -73,7 +73,9 @@ void print_man(){
   printf("\n[-f] filename.txt     To specify the filename where logs will be save, default filename is logs.txt\n\n,");
   printf("\n[-t] timeout          To specify the timeout, how long a connection with a client will take before the server end it\n\n");
   printf("\n[-m] maxSizeMessage   To specify the max number of character the request which will be log\n\n");
-  printf("\n[-h]                  To access to the help manual ( where you are now ) \n\n");
+  printf("\n[-h]                  To access to the help manual ( where you are now ) \n");
+  printf("\n[-c]                  To save all the packet capture \n");
+  printf("\n[-i]                  To save logs in ISS Format \n\n");
 
 }
 
@@ -143,12 +145,12 @@ int main (int argc, char *argv[]) {
             issFormat = 1;
             break;
          case ':':
-            printf("option needs a value\n");  //DEBUG
+            printf("Option needs a value\nrun './websnarf -h ' for reading help manual\n");  //DEBUG
             exit(1);
             break;
          case '?': //used for some unknown options
             printf("UNKNOW OPTION: %c\n", optopt);
-            printf("run './websnarf -h ' for reading help manual:\n");
+            printf("run './websnarf -h ' for reading help manual.\n");
             exit(1);
             break;
       }
@@ -239,7 +241,7 @@ int main (int argc, char *argv[]) {
                               fprintf(fp, "\n%d/%d/%d %d:%d:%d : %s",jour,mois,annee,heure,min,sec,target);
                           }
                           
-                          printf("\n%d/%d/%d %d:%d:%d : %s",jour,mois,annee,heure,min,sec,target); //DEBUG
+                          printf("\n%d/%d/%d %d:%d:%d %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,target); //DEBUG
                           //printf("DANS SAVE DIR\n");
                       }
                       fclose(fp);
@@ -250,7 +252,7 @@ int main (int argc, char *argv[]) {
                         if(issFormat){
                               fprintf(fp, "\n%s , - , %d/%d/%d , %d:%d:%d ,%s , %s",ipClient,jour,mois,annee,heure,min,sec,ipServ,target);
                         }else{
-                              fprintf(fp, "\n%d/%d/%d %d:%d:%d : %s",jour,mois,annee,heure,min,sec,target);
+                              fprintf(fp, "\n%d/%d/%d %d:%d:%d %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,target);
                         }
                           printf("\n%d/%d/%d %d:%d:%d  %s -> %s : %s",jour,mois,annee,heure,min,sec,ipClient,ipServ,target); //DEBUG
                           //printf("SAVE LOG\n");
