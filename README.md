@@ -19,8 +19,12 @@ Options disponibles :
 
 -f [filename] pour spécifier le nom du fichier de sauvegarde des logs ( par défaut logs.txt )
 
+-d [directoryName] Pour enregistrer les logs dans le dossier directoryName avec un fichier par client
+
 -t [temps] pour spécifier le temps du timeout ( temps de connexion entre le serveur et le client )
 
 -m [maxSizeMessage] pour spécifier le nombre de caractères de la requête qu'on va logger
 
 -c Capture de paquet , permet de capture toute la requête sous forme de paquet
+
+-i Enregistre les logs au format ISS
