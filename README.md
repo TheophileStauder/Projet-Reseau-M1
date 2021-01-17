@@ -1,5 +1,5 @@
 # Projet-Reseau-M1
-IMPORTANT : par défaut le serveur écoute sur le port 80 , ce port est privé ( comme tous les ports inférieur à 1024) pour écouter sur ce port il
+IMPORTANT : par défaut le serveur écoute sur le port 80 , ce port est privé (comme tous les ports inférieur à 1024) pour écouter sur ce port il
 
 faut donc executer avec sudo pour donner les permissions ( "sudo ./websnarf")
 
